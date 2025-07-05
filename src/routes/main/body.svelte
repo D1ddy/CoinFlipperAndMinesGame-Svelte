@@ -1,7 +1,5 @@
 <script lang="ts">
-    function Test(){
-        console.log("TEST");
-    }
+    import {fly} from 'svelte/transition'
 </script>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Iceland&family=Orbitron:wght@700&family=VT323&display=swap');
@@ -48,7 +46,7 @@
     }
 </style>
 <main>
-    <div id="games">
+    <div id="games" transition:fly={{y:100, duration:1000}}>
         <div id="grid">    
             <a id="mines" class="gamesDiv" href="/mines">
                 Play Mines
