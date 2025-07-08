@@ -45,6 +45,7 @@
         color: #E0E0E0;
     }
 </style>
+<title>Main</title>
 <main>
     <div id="games" transition:fly={{y:100, duration:1000}}>
         <div id="grid">    

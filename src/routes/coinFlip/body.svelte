@@ -97,6 +97,7 @@
     }
 
 </style>
+<title>Flip a Coin</title>
 <main>   
     <div id = "mainContainer" transition:fade={{duration:1000}}>
         <div id="coin" bind:this={divElement}>
