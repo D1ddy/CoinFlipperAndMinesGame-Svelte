@@ -1,4 +1,22 @@
 <script lang="ts">
+    import {createTimeline} from 'animejs';
+    import {onMount} from "svelte";
+    import { fade } from 'svelte/transition';
+
+    let tableAnimation:any;
+    let timeline = createTimeline({ defaults: { duration: 5000 } });
+    onMount(()=>{
+        timeline
+        .label("start")
+        .add(tableAnimation,{
+            opacity:{from:0},
+            y:[{from:'2rem'}],
+            duration:2000,
+            easing:'easeInOutSine',
+            autoplay:true,
+        },"start")
+    })
+
     class Polje{
                 bomb: boolean;
                 id:number;
@@ -13,7 +31,9 @@
     let money:number = $state(100);
     let inputMoney:any = $state(0);
     let table:any = [];
-    let div:any = $state();
+
+    let arrayDiv:Array<any> = $state([]);
+
     let finish:boolean = $state(false);
     let gameInProgress:boolean = $state(false);
     function makeTable(){
@@ -28,7 +48,10 @@
     }    
 };
 makeTable();
-function putBombsIntoTable(numberOfBombs:number){
+function putBombsIntoTable(numberOfBombs:number, inputMoney:number){
+    if (numberOfBombs == 0 || inputMoney == 0){
+        return;
+    }
     let positionOfBombs:Array<number> = [];
     gameInProgress = true;
     for(let i:number = 0; i < numberOfBombs ; i++){
@@ -56,8 +79,10 @@ function clearTable(){
     for(let i:number = 0; i < 5; i++){
         for(let j:number = 0; j < 5; j++){
             table[i][j].bomb = false;
-            //TODO change te colour of the divs again 
         }
+    }
+    for(let i :number = 0; i < arrayDiv.length; i++){
+        arrayDiv[i].style.backgroundColor = '#1964d4'; 
     }
 }
 </script>
@@ -67,7 +92,7 @@ function clearTable(){
         flex-direction: column;
         justify-content: center; 
         align-items: center; 
-        min-height: calc(100vh - 5vh);
+        min-height: calc(105vh - 5vh);
         margin: 0;
         color: #E0E0E0;
         font-family: "Orbitron", sans-serif;
@@ -102,6 +127,70 @@ function clearTable(){
         border: 1px #0f2747;
         box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
         border-right-style: solid;
+        display: grid;
+        grid-template-rows: 1fr 1fr 1fr 1fr;
+    }
+    #numberOfBombs{
+        justify-self: center;
+        align-self: end;
+        justify-content: center;
+       
+    }
+    .numberOfBombs{
+       height: 6vh;
+       width: 6vh;
+       border: none;
+       margin:3px;
+       box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+       background-color: #1964d4;
+       font-family: "Orbitron", sans-serif;
+       font-size: 3vh;
+       color: #E0E0E0;
+    
+    }
+    .numberOfBombs:hover{
+        cursor: pointer;
+        background-color: #2668ca;
+    }
+    .numberOfBombs:focus{
+        background-color: #377ee7;
+    }
+    input{
+        justify-self: center;
+        align-self:center;
+        justify-content: top;
+        height: 5vh;
+        width: 30vh;
+        border: 1px solid transparent;
+        box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+        border-radius: 3%;
+        -webkit-appearance: none;
+        background-color: #2668ca;
+        color: #E0E0E0;
+        font-size: 3vh;
+        font-family: "Orbitron", sans-serif;
+    }
+    input:focus{
+        outline: none;
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+    .startFinishButtons{
+         justify-self: center;
+        align-self:center;
+        justify-content: top;
+        height: 6vh;
+        width: 13vh;
+        box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+       background-color: #1964d4;
+       font-family: "Orbitron", sans-serif;
+       font-size: 3vh;
+       color: #E0E0E0;
+    }
+    .startFinishButtons:hover{
+        cursor: pointer;
+        background-color: #296bce;
     }
     #bombs{
     display: grid;
@@ -114,14 +203,16 @@ function clearTable(){
     .polje{
         width: 90%;
         height: 90%;
-        border:1px solid gray;
+        border:1px solid transparent;
+        background-color: #1964d4;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
         border-radius: 5%;
         cursor: pointer;
     }
 </style>
 <title>Mines</title>
-<main>
-    <div id="table">
+<main transition:fade={{duration:1000}}>
+    <div id="table" bind:this={tableAnimation}>
         <div id="tableHeader">
                 Mines
         </div>
@@ -136,18 +227,18 @@ function clearTable(){
             <input type="number" min="0" max="{money}" bind:this={inputMoney}>
             <button onclick="{()=>{
                 if(!gameInProgress){
-                    putBombsIntoTable(numberOfBombs);
+                    putBombsIntoTable(numberOfBombs, inputMoney);
                     finish = true;
                     console.table(table)
                 }
-            }}">Start</button>
+            }}" class="startFinishButtons">Start</button>
             {#if finish}
                 <button onclick="{() => {
                     finish = false;
                     clearTable();
                     console.table(table);
                     //TODO CHANGE MONEY\\
-                    }}">Finish</button>
+                    }}" class="startFinishButtons">Finish</button>
             {/if}
         </div>
         <div id="bombs">
@@ -155,16 +246,17 @@ function clearTable(){
             {#each polje as item}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="polje" id="{item.id}" bind:this={div} onclick="{() => { 
+                
+                <div class="polje" id="{item.id}" bind:this={arrayDiv[item.id]} onclick="{() => { 
                     if(!item.bomb && gameInProgress){
-                       console.log(div);
-                       //TODO change the colour of the divs 
+                        arrayDiv[item.id].style.backgroundColor = 'green'
+                        
                     }
                     if(item.bomb){
+                        arrayDiv[item.id].style.backgroundColor = 'red';
                         gameInProgress = false;
                     }
-                    console.log(item);
-                }}"></div> 
+                }}"></div>
             {/each}
         {/each}
 </div>
