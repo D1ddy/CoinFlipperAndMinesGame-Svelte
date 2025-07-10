@@ -85,6 +85,15 @@ function clearTable(){
         arrayDiv[i].style.backgroundColor = '#1964d4'; 
     }
 }
+function showBombs(){
+    for(let i:number = 0 ; i < 5 ; i++){
+        for(let j:number = 0 ; j < 5 ; j++){
+            if(table[i][j].bomb){
+                arrayDiv[table[i][j].id].style.backgroundColor = 'red';
+            }
+        }
+    }
+}
 </script>
 <style>
     main{
@@ -235,6 +244,7 @@ function clearTable(){
             {#if finish}
                 <button onclick="{() => {
                     finish = false;
+                    gameInProgress = false;
                     clearTable();
                     console.table(table);
                     //TODO CHANGE MONEY\\
@@ -255,6 +265,7 @@ function clearTable(){
                     if(item.bomb){
                         arrayDiv[item.id].style.backgroundColor = 'red';
                         gameInProgress = false;
+                        showBombs();
                     }
                 }}"></div>
             {/each}
