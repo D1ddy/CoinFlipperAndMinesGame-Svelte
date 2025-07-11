@@ -2,7 +2,14 @@
     import {createTimeline} from 'animejs';
     import {onMount} from "svelte";
     import { fade } from 'svelte/transition';
+    import { wallet } from '../svelteStore'
 
+    let money:number = $state(0);
+
+    wallet.subscribe((value) => {
+        money = value;
+        console.log(money);
+    })
     let tableAnimation:any;
     let timeline = createTimeline({ defaults: { duration: 5000 } });
     onMount(()=>{
@@ -10,7 +17,7 @@
         .label("start")
         .add(tableAnimation,{
             opacity:{from:0},
-            y:[{from:'2rem'}],
+            y:[{from:'2rem'}], // table animation
             duration:2000,
             easing:'easeInOutSine',
             autoplay:true,
@@ -28,13 +35,13 @@
 
     let bombButtons:Array<string>= ['1','2','3','4','5'];
     let numberOfBombs:number = $state(0);
-    let money:number = $state(100);
     let inputMoney:any = $state(0);
     let table:any = [];
 
     let arrayDiv:Array<any> = $state([]);
 
     let finish:boolean = $state(false);
+    let lost:boolean = $state(false);
     let gameInProgress:boolean = $state(false);
     function makeTable(){
     let tmp = 0;
@@ -93,6 +100,29 @@ function showBombs(){
             }
         }
     }
+}
+
+let tilesRevield:number = $state(0);
+let multiplier:number = $state(0);
+
+function calculateMultiplier(mines:number) {
+  const baseMultiplier = 0.33; 
+  const scalingFactor = 0.16; 
+  if (mines === 24) return 50.0; 
+  if(mines == 1) return 0.33;
+  return baseMultiplier + (mines - 1) * scalingFactor;
+}
+
+function calculateTileReward(mines:number) {
+  const baseReward = 0.3; 
+  const rewardScaling = 0.2; 
+  const highRiskScaling = 0.5;
+
+  if (mines <= 10) {
+    return baseReward + (mines - 3) * rewardScaling;
+  } else {
+    return baseReward + (10 - 3) * rewardScaling + (mines - 10) * highRiskScaling;
+  }
 }
 </script>
 <style>
@@ -223,7 +253,7 @@ function showBombs(){
 <main transition:fade={{duration:1000}}>
     <div id="table" bind:this={tableAnimation}>
         <div id="tableHeader">
-                Mines
+                Mines Wallet: {money}$
         </div>
         <div id="bettingSection">
             <div id="numberOfBombs">
@@ -235,10 +265,11 @@ function showBombs(){
             </div>
             <input type="number" min="0" max="{money}" bind:this={inputMoney}>
             <button onclick="{()=>{
-                if(!gameInProgress){
+                if(!gameInProgress && numberOfBombs != 0 && parseInt(inputMoney.value) > 0 && parseInt(inputMoney.value) <= money){
+                    lost = false;
                     putBombsIntoTable(numberOfBombs, inputMoney);
+                    multiplier = calculateMultiplier(numberOfBombs);
                     finish = true;
-                    console.table(table)
                 }
             }}" class="startFinishButtons">Start</button>
             {#if finish}
@@ -246,8 +277,11 @@ function showBombs(){
                     finish = false;
                     gameInProgress = false;
                     clearTable();
-                    console.table(table);
-                    //TODO CHANGE MONEY\\
+                    if(!lost && tilesRevield != 0){
+                        const wonAmount:number =parseInt((parseInt(inputMoney.value) * multiplier).toFixed(2));
+                        wallet.update(money => money + wonAmount)
+                    }
+                    tilesRevield = 0;
                     }}" class="startFinishButtons">Finish</button>
             {/if}
         </div>
@@ -260,11 +294,18 @@ function showBombs(){
                 <div class="polje" id="{item.id}" bind:this={arrayDiv[item.id]} onclick="{() => { 
                     if(!item.bomb && gameInProgress){
                         arrayDiv[item.id].style.backgroundColor = 'green'
-                        
+                        tilesRevield++;
+                        console.log(tilesRevield);
+                        multiplier += calculateTileReward(numberOfBombs);
                     }
                     if(item.bomb){
                         arrayDiv[item.id].style.backgroundColor = 'red';
+                        if(gameInProgress){
+                            wallet.update(money => money - inputMoney.value);
+                        }
                         gameInProgress = false;
+                        lost = true;
+                        tilesRevield = 0;
                         showBombs();
                     }
                 }}"></div>
